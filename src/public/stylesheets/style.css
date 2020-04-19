@@ -1,0 +1,26 @@
+.hidden {
+  display: none;
+}
+
+.card {
+  background-color: white;
+  border-radius: 15px;
+  padding-left: 40px;
+  padding-right: 40px;
+  padding-top: 60px;
+  padding-bottom: 60px;
+  margin: 5px;
+}
+
+.card:hover {
+  background-color: lightblue;
+}
+
+.hand {
+  display: flex;
+  margin: 10%;
+}
+
+body {
+  background-color: green;
+}
