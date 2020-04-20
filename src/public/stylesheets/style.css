@@ -24,3 +24,9 @@
 body {
   background-color: green;
 }
+
+.counter {
+  color: lightgoldenrodyellow;
+  text-align: center;
+  font-size: large;
+}

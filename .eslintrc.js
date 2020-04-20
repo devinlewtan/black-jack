@@ -1,6 +1,6 @@
 module.exports = {
     "plugins": [
-        "mocha", 
+        "mocha",
     ],
     "env": {
         "browser": true,

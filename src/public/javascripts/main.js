@@ -10,23 +10,129 @@ function arrayRemove(arr, values) {
   });
 }
 
-function renderHand(hand) {
-  const newDiv = document.createElement("div");
-  newDiv.classList.add("hand");
-  hand.map((c) => {
-    content = document.createTextNode(c.value + c.suit);
-    const card = document.createElement("div");
-    card.appendChild(content);
-    card.classList.add("card");
-    newDiv.appendChild(card);
+//add up all card values
+function calculateTotal(hand) {
+  const reducer = (accumulator, currentValue) => accumulator + currentValue;
+  const valueArray = hand.map((c) => c.value);
+  valueArray.map((val, i) => {
+    if (val === "J") {
+      valueArray[i] = 11;
+    } else if (val === "Q") {
+      valueArray[i] = 12;
+    } else if (val === "K") {
+      valueArray[i] = 13;
+    } else if (val === "A") {
+      valueArray[i] = 1;
+    }
   });
+  return valueArray.reduce(reducer);
+}
+
+//render an element with player and total
+function renderTotal(name, hand, total) {
+  const newDiv = document.createElement("div");
+  newDiv.classList.add("counter");
+  newDiv.appendChild(
+    document.createTextNode(name + "'s Hand - Total: " + total)
+  );
+  newDiv.id = name + "Total";
   const currentDiv = document.querySelector(".game");
   document.body.insertBefore(newDiv, currentDiv);
 }
 
-function renderGame(user, computer) {
-  document.body.onload = renderHand(computer);
-  document.body.onload = renderHand(user);
+function renderHand(name, hand) {
+  const newDiv = document.createElement("div");
+  newDiv.classList.add("hand");
+  hand.map((c) => {
+    const card = document.createElement("div");
+    card.appendChild(document.createTextNode(c.value + c.suit));
+    card.classList.add("card");
+    newDiv.appendChild(card);
+  });
+  newDiv.id = name + "Hand";
+  const currentDiv = document.querySelector(".game");
+  document.body.insertBefore(newDiv, currentDiv);
+}
+
+function renderHitStand(deck, userHand, computerHand) {
+  //wrapper div
+  const newDiv = document.createElement("div");
+  newDiv.classList.add("hand");
+
+  //hit
+  const hitButton = document.createElement("button");
+  hitButton.classList.add("button");
+  const hitText = document.createTextNode("Hit");
+  hitButton.appendChild(hitText);
+  newDiv.appendChild(hitButton);
+
+  handleHit(hitButton, deck, "User", userHand);
+
+  //stand
+  const standButton = document.createElement("button");
+  const standText = document.createTextNode("Stand");
+  standButton.appendChild(standText);
+  newDiv.appendChild(standButton);
+
+  handleStand(hitButton, standButton, deck, computerHand);
+
+  const currentDiv = document.querySelector(".game");
+  document.body.insertBefore(newDiv, currentDiv);
+}
+
+function handleHit(button, deck, name, hand) {
+  button.addEventListener("click", function (evt) {
+    const next = deck.pop();
+    deck = arrayRemove(deck, [next]);
+    const card = document.createElement("div");
+    card.appendChild(document.createTextNode(next.value + next.suit));
+    card.classList.add("card");
+    document.getElementById(name + "Hand").appendChild(card);
+    hand = [next, ...hand];
+
+    const total = document.getElementById(name + "Total");
+    total.replaceChild(
+      document.createTextNode(
+        name + "'s Hand - Total: " + calculateTotal(hand)
+      ),
+      total.childNodes[0]
+    );
+  });
+}
+
+function handleStand(hitButton, standButton, deck, computerHand) {
+  standButton.addEventListener("click", function (evt) {
+    while (calculateTotal(computerHand) < 20) {
+      const next = deck.pop();
+      deck = arrayRemove(deck, [next]);
+      const card = document.createElement("div");
+      card.appendChild(document.createTextNode(next.value + next.suit));
+      card.classList.add("card");
+      document.getElementById("ComputerHand").appendChild(card);
+      computerHand = [next, ...computerHand];
+
+      const total = document.getElementById("ComputerTotal");
+      total.replaceChild(
+        document.createTextNode(
+          "Computer's Hand - Total: " + calculateTotal(computerHand)
+        ),
+        total.childNodes[0]
+      );
+    }
+  });
+}
+
+function renderGame(deck, user, computer) {
+  let isOver = true;
+  let computerTotal = "?";
+  if (isOver) {
+    computerTotal = calculateTotal(computer);
+  }
+  document.body.onload = renderTotal("Computer", computer, computerTotal);
+  document.body.onload = renderHand("Computer", computer);
+  document.body.onload = renderTotal("User", user, calculateTotal(user));
+  document.body.onload = renderHand("User", user);
+  document.body.onload = renderHitStand(deck, user, computer);
 }
 
 function dealCards(input) {
@@ -114,7 +220,7 @@ function dealCards(input) {
       ];
     }
   });
-  renderGame(userHand, computerHand);
+  renderGame(remainingCards, userHand, computerHand);
 }
 
 function main() {
