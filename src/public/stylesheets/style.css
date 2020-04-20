@@ -14,10 +14,10 @@
 
 .cover {
   background-color: blue;
-  text-transform: unset;
+  font-size: 0px;
   border-radius: 15px;
-  padding-left: 40px;
-  padding-right: 40px;
+  padding-left: 60px;
+  padding-right: 50px;
   padding-top: 60px;
   padding-bottom: 60px;
   margin: 5px;
@@ -43,5 +43,7 @@ body {
 }
 
 .status {
-  background-color: papayawhip;
+  text-align: center;
+  font-size: 25px;
+  color: cyan;
 }

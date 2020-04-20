@@ -50,12 +50,101 @@ function renderHand(name, hand) {
     newDiv.appendChild(card);
   });
   newDiv.id = name + "Hand";
+
   if (name === "Computer") {
     newDiv.childNodes[0].classList.add("cover");
-    console.log(newDiv.childNodes[0].childNodes[0]);
+    newDiv.childNodes[0].classList.remove("card");
   }
   const currentDiv = document.querySelector(".game");
   document.body.insertBefore(newDiv, currentDiv);
+}
+
+function showComputerHand(deck, computerHand) {
+  while (calculateTotal(computerHand) < 19) {
+    const next = deck.pop();
+    deck = arrayRemove(deck, [next]);
+    const card = document.createElement("div");
+    card.appendChild(document.createTextNode(next.value + next.suit));
+    card.classList.add("card");
+    document.getElementById("ComputerHand").appendChild(card);
+    computerHand = [next, ...computerHand];
+
+    //css change for hidden card
+    const hiddenCard = document.getElementById("ComputerHand");
+    hiddenCard.childNodes[0].classList.remove("cover");
+    hiddenCard.childNodes[0].classList.add("card");
+
+    const total = document.getElementById("ComputerTotal");
+    total.replaceChild(
+      document.createTextNode(
+        "Computer's Hand - Total: " + calculateTotal(computerHand)
+      ),
+      total.childNodes[0]
+    );
+  }
+}
+
+function determineWinner(action, deck, userHand, computerHand) {
+  userHand = calculateTotal(userHand);
+  computerHand = calculateTotal(computerHand);
+  let status = "";
+  if (action === "hit" && userHand > 21) {
+    status = "Player lost! (Busted)";
+  } else if (
+    computerHand > 21 ||
+    (action === "stand" &&
+      computerHand <= 21 &&
+      userHand <= 21 &&
+      userHand > computerHand)
+  ) {
+    status = "Player won!";
+  } else if (computerHand <= 21 && userHand <= 21 && userHand < computerHand) {
+    status = "Computer won!";
+  } else if (computerHand === userHand) {
+    status = "It's a tie!";
+  }
+  const hitstand = document.getElementById("HitStand");
+  hitstand.addEventListener("click", function () {
+    hitstand.classList.add("hidden");
+    hitstand.classList.remove("hand");
+  });
+  const newDiv = document.createElement("div");
+  newDiv.classList.add("status");
+  newDiv.appendChild(document.createTextNode(status));
+  const currentDiv = document.querySelector(".game");
+  document.body.insertBefore(newDiv, currentDiv);
+}
+
+function handleHit(button, deck, name, userHand, computerHand) {
+  button.addEventListener("click", function () {
+    const next = deck.pop();
+    deck = arrayRemove(deck, [next]);
+    const card = document.createElement("div");
+    card.appendChild(document.createTextNode(next.value + next.suit));
+    card.classList.add("card");
+    document.getElementById("UserHand").appendChild(card);
+    userHand = [next, ...userHand];
+
+    const total = document.getElementById("UserTotal");
+    total.replaceChild(
+      document.createTextNode(
+        "User's Hand - Total: " + calculateTotal(userHand)
+      ),
+      total.childNodes[0]
+    );
+
+    if (calculateTotal(userHand) > 21) {
+      determineWinner("hit", deck, userHand, computerHand);
+      showComputerHand(deck, computerHand);
+    }
+  });
+}
+
+function handleStand(standButton, deck, userHand, computerHand) {
+  standButton.addEventListener("click", function () {
+    showComputerHand(deck, computerHand);
+    determineWinner("stand", deck, userHand, computerHand);
+  });
 }
 
 function renderHitStand(deck, userHand, computerHand) {
@@ -85,102 +174,8 @@ function renderHitStand(deck, userHand, computerHand) {
   document.body.insertBefore(newDiv, currentDiv);
 }
 
-function handleHit(button, deck, name, userHand, computerHand) {
-  button.addEventListener("click", function (evt) {
-    const next = deck.pop();
-    deck = arrayRemove(deck, [next]);
-    const card = document.createElement("div");
-    card.appendChild(document.createTextNode(next.value + next.suit));
-    card.classList.add("card");
-    document.getElementById("UserHand").appendChild(card);
-    userHand = [next, ...userHand];
-
-    const total = document.getElementById("UserTotal");
-    total.replaceChild(
-      document.createTextNode(
-        "User's Hand - Total: " + calculateTotal(userHand)
-      ),
-      total.childNodes[0]
-    );
-
-    if (calculateTotal(userHand) > 21) {
-      determineWinner("hit", userHand, computerHand);
-    }
-  });
-}
-
-function handleStand(standButton, deck, userHand, computerHand) {
-  standButton.addEventListener("click", function (evt) {
-    while (calculateTotal(computerHand) < 19) {
-      const next = deck.pop();
-      deck = arrayRemove(deck, [next]);
-      const card = document.createElement("div");
-      card.appendChild(document.createTextNode(next.value + next.suit));
-      card.classList.add("card");
-      document.getElementById("ComputerHand").appendChild(card);
-      computerHand = [next, ...computerHand];
-
-      const total = document.getElementById("ComputerTotal");
-      total.replaceChild(
-        document.createTextNode(
-          "Computer's Hand - Total: " + calculateTotal(computerHand)
-        ),
-        total.childNodes[0]
-      );
-    }
-    determineWinner("stand", userHand, computerHand);
-  });
-}
-
-function determineWinner(action, userHand, computerHand) {
-  userHand = calculateTotal(userHand);
-  computerHand = calculateTotal(computerHand);
-  let status = "";
-  if (action === "hit" && userHand > 21) {
-    status = "Player lost! (Busted)";
-  } else if (
-    computerHand > 21 ||
-    (action === "stand" &&
-      computerHand < 21 &&
-      userHand < 21 &&
-      userHand > computerHand)
-  ) {
-    status = "Player won!";
-  } else if (computerHand < 21 && userHand < 21 && userHand < computerHand) {
-    status = "Computer won!";
-  }
-  const hitstand = document.getElementById("HitStand");
-  hitstand.addEventListener("click", function (evt) {
-    hitstand.classList.add("hidden");
-    hitstand.classList.remove("hand");
-  });
-  const newDiv = document.createElement("div");
-  newDiv.classList.add("status");
-  newDiv.appendChild(document.createTextNode(status));
-  const currentDiv = document.querySelector(".game");
-  document.body.insertBefore(newDiv, currentDiv);
-
-  //reset button
-  // const resetButton = document.createElement("button");
-  // resetButton.id = "resetButton";
-  // resetButton.appendChild(document.createTextNode("reset"));
-  // document.body.insertBefore(resetButton, currentDiv);
-}
-
-// function handleReset() {
-//   const resetButton = document.getElementById("resetButton");
-//   resetButton.addEventListener("click", function (evt) {
-//     main();
-//   });
-// }
-
 function renderGame(deck, user, computer) {
-  let isOver = true;
-  let computerTotal = "?";
-  if (isOver) {
-    computerTotal = calculateTotal(computer);
-  }
-  document.body.onload = renderTotal("Computer", computer, computerTotal);
+  document.body.onload = renderTotal("Computer", computer, "?");
   document.body.onload = renderHand("Computer", computer);
   document.body.onload = renderTotal("User", user, calculateTotal(user));
   document.body.onload = renderHand("User", user);
@@ -247,7 +242,7 @@ function dealCards(input) {
   let remainingCards = deck;
   const startingCards = new Array();
   input.split(",").forEach((i) => {
-    let c = remainingCards.filter((card) => card.value == i);
+    const c = remainingCards.filter((card) => card.value == i);
     startingCards.push(c[0]);
     remainingCards = arrayRemove(remainingCards, startingCards);
   });
@@ -259,7 +254,7 @@ function dealCards(input) {
   const computerHand = new Array();
   startingCards.map((card, index) => {
     if (index < 4) {
-      if (index % 2 == 0) {
+      if (index % 2 === 0) {
         computerHand.push(card);
       } else {
         userHand.push(card);
@@ -278,13 +273,13 @@ function dealCards(input) {
 function main() {
   const form = document.querySelector("form");
 
-  form.addEventListener("click", function (evt) {
+  form.addEventListener("submit", function (evt) {
     evt.preventDefault();
     const userInput = this[0].value;
     dealCards(userInput);
   });
 
-  document.querySelector(".playBtn").addEventListener("click", function (evt) {
+  document.querySelector(".playBtn").addEventListener("click", function () {
     form.classList.add("hidden");
   });
 }
