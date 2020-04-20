@@ -50,6 +50,10 @@ function renderHand(name, hand) {
     newDiv.appendChild(card);
   });
   newDiv.id = name + "Hand";
+  if (name === "Computer") {
+    newDiv.childNodes[0].classList.add("cover");
+    console.log(newDiv.childNodes[0].childNodes[0]);
+  }
   const currentDiv = document.querySelector(".game");
   document.body.insertBefore(newDiv, currentDiv);
 }
@@ -65,8 +69,9 @@ function renderHitStand(deck, userHand, computerHand) {
   const hitText = document.createTextNode("Hit");
   hitButton.appendChild(hitText);
   newDiv.appendChild(hitButton);
+  newDiv.id = "HitStand";
 
-  handleHit(hitButton, deck, "User", userHand);
+  handleHit(hitButton, deck, "User", userHand, computerHand);
 
   //stand
   const standButton = document.createElement("button");
@@ -74,35 +79,39 @@ function renderHitStand(deck, userHand, computerHand) {
   standButton.appendChild(standText);
   newDiv.appendChild(standButton);
 
-  handleStand(hitButton, standButton, deck, computerHand);
+  handleStand(standButton, deck, userHand, computerHand);
 
   const currentDiv = document.querySelector(".game");
   document.body.insertBefore(newDiv, currentDiv);
 }
 
-function handleHit(button, deck, name, hand) {
+function handleHit(button, deck, name, userHand, computerHand) {
   button.addEventListener("click", function (evt) {
     const next = deck.pop();
     deck = arrayRemove(deck, [next]);
     const card = document.createElement("div");
     card.appendChild(document.createTextNode(next.value + next.suit));
     card.classList.add("card");
-    document.getElementById(name + "Hand").appendChild(card);
-    hand = [next, ...hand];
+    document.getElementById("UserHand").appendChild(card);
+    userHand = [next, ...userHand];
 
-    const total = document.getElementById(name + "Total");
+    const total = document.getElementById("UserTotal");
     total.replaceChild(
       document.createTextNode(
-        name + "'s Hand - Total: " + calculateTotal(hand)
+        "User's Hand - Total: " + calculateTotal(userHand)
       ),
       total.childNodes[0]
     );
+
+    if (calculateTotal(userHand) > 21) {
+      determineWinner("hit", userHand, computerHand);
+    }
   });
 }
 
-function handleStand(hitButton, standButton, deck, computerHand) {
+function handleStand(standButton, deck, userHand, computerHand) {
   standButton.addEventListener("click", function (evt) {
-    while (calculateTotal(computerHand) < 20) {
+    while (calculateTotal(computerHand) < 19) {
       const next = deck.pop();
       deck = arrayRemove(deck, [next]);
       const card = document.createElement("div");
@@ -119,8 +128,51 @@ function handleStand(hitButton, standButton, deck, computerHand) {
         total.childNodes[0]
       );
     }
+    determineWinner("stand", userHand, computerHand);
   });
 }
+
+function determineWinner(action, userHand, computerHand) {
+  userHand = calculateTotal(userHand);
+  computerHand = calculateTotal(computerHand);
+  let status = "";
+  if (action === "hit" && userHand > 21) {
+    status = "Player lost! (Busted)";
+  } else if (
+    computerHand > 21 ||
+    (action === "stand" &&
+      computerHand < 21 &&
+      userHand < 21 &&
+      userHand > computerHand)
+  ) {
+    status = "Player won!";
+  } else if (computerHand < 21 && userHand < 21 && userHand < computerHand) {
+    status = "Computer won!";
+  }
+  const hitstand = document.getElementById("HitStand");
+  hitstand.addEventListener("click", function (evt) {
+    hitstand.classList.add("hidden");
+    hitstand.classList.remove("hand");
+  });
+  const newDiv = document.createElement("div");
+  newDiv.classList.add("status");
+  newDiv.appendChild(document.createTextNode(status));
+  const currentDiv = document.querySelector(".game");
+  document.body.insertBefore(newDiv, currentDiv);
+
+  //reset button
+  // const resetButton = document.createElement("button");
+  // resetButton.id = "resetButton";
+  // resetButton.appendChild(document.createTextNode("reset"));
+  // document.body.insertBefore(resetButton, currentDiv);
+}
+
+// function handleReset() {
+//   const resetButton = document.getElementById("resetButton");
+//   resetButton.addEventListener("click", function (evt) {
+//     main();
+//   });
+// }
 
 function renderGame(deck, user, computer) {
   let isOver = true;
