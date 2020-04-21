@@ -29,7 +29,6 @@
 
 .hand {
   display: flex;
-  margin: 10%;
 }
 
 body {
@@ -46,4 +45,5 @@ body {
   text-align: center;
   font-size: 25px;
   color: cyan;
+  position: center;
 }

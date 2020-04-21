@@ -15,14 +15,8 @@ function calculateTotal(hand) {
   const reducer = (accumulator, currentValue) => accumulator + currentValue;
   const valueArray = hand.map((c) => c.value);
   valueArray.map((val, i) => {
-    if (val === "J") {
-      valueArray[i] = 11;
-    } else if (val === "Q") {
-      valueArray[i] = 12;
-    } else if (val === "K") {
-      valueArray[i] = 13;
-    } else if (val === "A") {
-      valueArray[i] = 1;
+    if (val === "J" || val === "Q" || val === "K") {
+      valueArray[i] = 10;
     }
   });
   return valueArray.reduce(reducer);
@@ -59,14 +53,21 @@ function renderHand(name, hand) {
   document.body.insertBefore(newDiv, currentDiv);
 }
 
-function showComputerHand(deck, computerHand) {
+function showComputerHand(deck, userHand, computerHand) {
   while (calculateTotal(computerHand) < 19) {
-    const next = deck.pop();
+    const next = deck.shift();
     deck = arrayRemove(deck, [next]);
     const card = document.createElement("div");
     card.appendChild(document.createTextNode(next.value + next.suit));
     card.classList.add("card");
     document.getElementById("ComputerHand").appendChild(card);
+    if (next.value === "A") {
+      if (calculateTotal(computerHand) > 10) {
+        next.value = 1;
+      } else {
+        next.value = 11;
+      }
+    }
     computerHand = [next, ...computerHand];
 
     //css change for hidden card
@@ -82,25 +83,25 @@ function showComputerHand(deck, computerHand) {
       total.childNodes[0]
     );
   }
+  determineWinner(calculateTotal(userHand), calculateTotal(computerHand));
 }
 
-function determineWinner(action, deck, userHand, computerHand) {
-  userHand = calculateTotal(userHand);
-  computerHand = calculateTotal(computerHand);
+function determineWinner(userTotal, computerTotal) {
   let status = "";
-  if (action === "hit" && userHand > 21) {
+  if (userTotal > 21) {
     status = "Player lost! (Busted)";
   } else if (
-    computerHand > 21 ||
-    (action === "stand" &&
-      computerHand <= 21 &&
-      userHand <= 21 &&
-      userHand > computerHand)
+    computerTotal > 21 ||
+    (computerTotal <= 21 && userTotal <= 21 && userTotal > computerTotal)
   ) {
     status = "Player won!";
-  } else if (computerHand <= 21 && userHand <= 21 && userHand < computerHand) {
+  } else if (
+    computerTotal <= 21 &&
+    userTotal <= 21 &&
+    userTotal < computerTotal
+  ) {
     status = "Computer won!";
-  } else if (computerHand === userHand) {
+  } else if (computerTotal === userTotal) {
     status = "It's a tie!";
   }
   const hitstand = document.getElementById("HitStand");
@@ -113,38 +114,6 @@ function determineWinner(action, deck, userHand, computerHand) {
   newDiv.appendChild(document.createTextNode(status));
   const currentDiv = document.querySelector(".game");
   document.body.insertBefore(newDiv, currentDiv);
-}
-
-function handleHit(button, deck, name, userHand, computerHand) {
-  button.addEventListener("click", function () {
-    const next = deck.pop();
-    deck = arrayRemove(deck, [next]);
-    const card = document.createElement("div");
-    card.appendChild(document.createTextNode(next.value + next.suit));
-    card.classList.add("card");
-    document.getElementById("UserHand").appendChild(card);
-    userHand = [next, ...userHand];
-
-    const total = document.getElementById("UserTotal");
-    total.replaceChild(
-      document.createTextNode(
-        "User's Hand - Total: " + calculateTotal(userHand)
-      ),
-      total.childNodes[0]
-    );
-
-    if (calculateTotal(userHand) > 21) {
-      determineWinner("hit", deck, userHand, computerHand);
-      showComputerHand(deck, computerHand);
-    }
-  });
-}
-
-function handleStand(standButton, deck, userHand, computerHand) {
-  standButton.addEventListener("click", function () {
-    showComputerHand(deck, computerHand);
-    determineWinner("stand", deck, userHand, computerHand);
-  });
 }
 
 function renderHitStand(deck, userHand, computerHand) {
@@ -160,7 +129,45 @@ function renderHitStand(deck, userHand, computerHand) {
   newDiv.appendChild(hitButton);
   newDiv.id = "HitStand";
 
-  handleHit(hitButton, deck, "User", userHand, computerHand);
+  hitButton.addEventListener("click", function () {
+    const next = deck.shift();
+    deck = arrayRemove(deck, [next]);
+    const card = document.createElement("div");
+    card.appendChild(document.createTextNode(next.value + next.suit));
+    card.classList.add("card");
+    document.getElementById("UserHand").appendChild(card);
+    if (next.value === "A") {
+      if (calculateTotal(userHand) > 10) {
+        next.value = 1;
+      } else {
+        next.value = 11;
+      }
+    }
+    userHand = [next, ...userHand];
+
+    const total = document.getElementById("UserTotal");
+    total.replaceChild(
+      document.createTextNode(
+        "User's Hand - Total: " + calculateTotal(userHand)
+      ),
+      total.childNodes[0]
+    );
+
+    if (calculateTotal(userHand) > 21) {
+      //css change for hidden card
+      const hiddenCard = document.getElementById("ComputerHand");
+      hiddenCard.childNodes[0].classList.remove("cover");
+      hiddenCard.childNodes[0].classList.add("card");
+      const total = document.getElementById("ComputerTotal");
+      total.replaceChild(
+        document.createTextNode(
+          "Computer's Hand - Total: " + calculateTotal(computerHand)
+        ),
+        total.childNodes[0]
+      );
+      determineWinner(calculateTotal(userHand), calculateTotal(computerHand));
+    }
+  });
 
   //stand
   const standButton = document.createElement("button");
@@ -168,7 +175,9 @@ function renderHitStand(deck, userHand, computerHand) {
   standButton.appendChild(standText);
   newDiv.appendChild(standButton);
 
-  handleStand(standButton, deck, userHand, computerHand);
+  standButton.addEventListener("click", function () {
+    showComputerHand(deck, userHand, computerHand);
+  });
 
   const currentDiv = document.querySelector(".game");
   document.body.insertBefore(newDiv, currentDiv);
