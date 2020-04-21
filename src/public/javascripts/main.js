@@ -1,5 +1,5 @@
 function shuffle(array) {
-  array.sort(() => Math.random() - 0.5);
+  return array.sort(() => Math.random() - 0.5);
 }
 
 function arrayRemove(arr, values) {
@@ -12,14 +12,26 @@ function arrayRemove(arr, values) {
 
 //add up all card values
 function calculateTotal(hand) {
-  const reducer = (accumulator, currentValue) => accumulator + currentValue;
   const valueArray = hand.map((c) => c.value);
-  valueArray.map((val, i) => {
+  let total = 0;
+  const aces = new Array();
+  valueArray.map((val) => {
     if (val === "J" || val === "Q" || val === "K") {
-      valueArray[i] = 10;
+      total += 10;
+    } else if (val === "A") {
+      aces.push(val);
+    } else {
+      total += val;
     }
   });
-  return valueArray.reduce(reducer);
+  aces.map((a) => {
+    if (total + 11 > 21) {
+      total += 1;
+    } else {
+      total += 11;
+    }
+  });
+  return total;
 }
 
 //render an element with player and total
@@ -37,6 +49,7 @@ function renderTotal(name, hand, total) {
 function renderHand(name, hand) {
   const newDiv = document.createElement("div");
   newDiv.classList.add("hand");
+  //console.log(hand);
   hand.map((c) => {
     const card = document.createElement("div");
     card.appendChild(document.createTextNode(c.value + c.suit));
@@ -51,39 +64,6 @@ function renderHand(name, hand) {
   }
   const currentDiv = document.querySelector(".game");
   document.body.insertBefore(newDiv, currentDiv);
-}
-
-function showComputerHand(deck, userHand, computerHand) {
-  while (calculateTotal(computerHand) < 19) {
-    const next = deck.shift();
-    deck = arrayRemove(deck, [next]);
-    const card = document.createElement("div");
-    card.appendChild(document.createTextNode(next.value + next.suit));
-    card.classList.add("card");
-    document.getElementById("ComputerHand").appendChild(card);
-    if (next.value === "A") {
-      if (calculateTotal(computerHand) > 10) {
-        next.value = 1;
-      } else {
-        next.value = 11;
-      }
-    }
-    computerHand = [next, ...computerHand];
-
-    //css change for hidden card
-    const hiddenCard = document.getElementById("ComputerHand");
-    hiddenCard.childNodes[0].classList.remove("cover");
-    hiddenCard.childNodes[0].classList.add("card");
-
-    const total = document.getElementById("ComputerTotal");
-    total.replaceChild(
-      document.createTextNode(
-        "Computer's Hand - Total: " + calculateTotal(computerHand)
-      ),
-      total.childNodes[0]
-    );
-  }
-  determineWinner(calculateTotal(userHand), calculateTotal(computerHand));
 }
 
 function determineWinner(userTotal, computerTotal) {
@@ -116,6 +96,32 @@ function determineWinner(userTotal, computerTotal) {
   document.body.insertBefore(newDiv, currentDiv);
 }
 
+function showComputerHand(deck, userHand, computerHand) {
+  while (calculateTotal(computerHand) < 19) {
+    const next = deck.shift();
+    deck = arrayRemove(deck, [next]);
+    const card = document.createElement("div");
+    card.appendChild(document.createTextNode(next.value + next.suit));
+    card.classList.add("card");
+    document.getElementById("ComputerHand").appendChild(card);
+    computerHand = [next, ...computerHand];
+
+    //css change for hidden card
+    const hiddenCard = document.getElementById("ComputerHand");
+    hiddenCard.childNodes[0].classList.remove("cover");
+    hiddenCard.childNodes[0].classList.add("card");
+
+    const total = document.getElementById("ComputerTotal");
+    total.replaceChild(
+      document.createTextNode(
+        "Computer's Hand - Total: " + calculateTotal(computerHand)
+      ),
+      total.childNodes[0]
+    );
+  }
+  determineWinner(calculateTotal(userHand), calculateTotal(computerHand));
+}
+
 function renderHitStand(deck, userHand, computerHand) {
   //wrapper div
   const newDiv = document.createElement("div");
@@ -131,18 +137,11 @@ function renderHitStand(deck, userHand, computerHand) {
 
   hitButton.addEventListener("click", function () {
     const next = deck.shift();
-    deck = arrayRemove(deck, [next]);
+    //deck = arrayRemove(deck, [next]);
     const card = document.createElement("div");
     card.appendChild(document.createTextNode(next.value + next.suit));
     card.classList.add("card");
     document.getElementById("UserHand").appendChild(card);
-    if (next.value === "A") {
-      if (calculateTotal(userHand) > 10) {
-        next.value = 1;
-      } else {
-        next.value = 11;
-      }
-    }
     userHand = [next, ...userHand];
 
     const total = document.getElementById("UserTotal");
@@ -250,33 +249,48 @@ function dealCards(input) {
   //grab user input cards first
   let remainingCards = deck;
   const startingCards = new Array();
-  input.split(",").forEach((i) => {
-    const c = remainingCards.filter((card) => card.value == i);
-    startingCards.push(c[0]);
-    remainingCards = arrayRemove(remainingCards, startingCards);
-  });
-  //return array without those cards anymore
-  remainingCards = arrayRemove(remainingCards, startingCards);
-
-  //deal
-  const userHand = new Array();
-  const computerHand = new Array();
-  startingCards.map((card, index) => {
-    if (index < 4) {
-      if (index % 2 === 0) {
-        computerHand.push(card);
-      } else {
-        userHand.push(card);
+  if (input === "") {
+    remainingCards = shuffle(remainingCards);
+    //deal
+    const userHand = new Array();
+    const computerHand = new Array();
+    remainingCards.map((card, index) => {
+      if (index < 4) {
+        if (index % 2 === 0) {
+          computerHand.push(card);
+        } else {
+          userHand.push(card);
+        }
       }
-    } else {
-      shuffle(remainingCards);
-      remainingCards = [
-        ...startingCards.slice(index - 1, startingCards.length),
-        ...arrayRemove(remainingCards, startingCards),
-      ];
-    }
-  });
-  renderGame(remainingCards, userHand, computerHand);
+    });
+    remainingCards.splice(0, 4);
+    renderGame(remainingCards, userHand, computerHand);
+  } else {
+    input.split(",").forEach((i) => {
+      const c = remainingCards.filter((card) => card.value == i);
+      startingCards.push(c[0]);
+      remainingCards = arrayRemove(remainingCards, [c[0]]);
+    });
+
+    remainingCards = shuffle(remainingCards);
+
+    let game = [];
+    //deal
+    const userHand = new Array();
+    const computerHand = new Array();
+    startingCards.map((card, index) => {
+      if (index < 4) {
+        if (index % 2 === 0) {
+          computerHand.push(card);
+        } else {
+          userHand.push(card);
+        }
+      }
+    });
+    startingCards.splice(0, 4);
+    game = [...startingCards, ...remainingCards];
+    renderGame(game, userHand, computerHand);
+  }
 }
 
 function main() {
